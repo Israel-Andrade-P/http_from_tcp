@@ -38,12 +38,12 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 	currentLine := ""
 
 	go func() {
+		defer close(linesChan)
 		for {
 			data := make([]byte, 8)
 			n, err := f.Read(data)
 			if err != nil {
 				if err == io.EOF {
-					close(linesChan)
 					break
 				}
 				log.Fatalf("Error reading file %v", err)
@@ -59,10 +59,13 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 			if i := bytes.IndexByte(data, '\n'); i != -1 {
 				currentLine += string(data[:i])
 				data = data[i+1:]
-				fmt.Printf("read: %s", currentLine)
+				linesChan <- currentLine
 				currentLine = ""
 			}
 			currentLine += string(data)
+		}
+		if len(currentLine) != 0 {
+			linesChan <- currentLine
 		}
 	}()
 	return linesChan
