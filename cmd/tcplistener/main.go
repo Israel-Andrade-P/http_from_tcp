@@ -34,7 +34,6 @@ func main() {
 
 func getLinesChannel(f io.ReadCloser) <-chan string {
 	linesChan := make(chan string)
-
 	currentLine := ""
 
 	go func() {
