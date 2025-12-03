@@ -113,7 +113,7 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 	}
 
 	rl := &RequestLine{
-		Method:        string(parts[1]),
+		Method:        string(parts[0]),
 		RequestTarget: string(parts[1]),
 		HttpVersion:   string(httpParts[1]),
 	}
