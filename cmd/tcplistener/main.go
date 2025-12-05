@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"log"
 	"net"
+
+	"github.com/Israel-Andrade-P/http_from_tcp.git/internal/request"
 )
 
 func main() {
@@ -23,49 +23,15 @@ func main() {
 		fmt.Println("a new connection has been established!")
 
 		go func(c net.Conn) {
-			for line := range getLinesChannel(conn) {
-				fmt.Printf("read: %s\n", line)
+			req, err := request.RequestFromReader(conn)
+			if err != nil {
+				log.Fatalf("error parsing requesr: %v", err)
 			}
+			fmt.Printf("- Method: %s\n", req.RequestLine.Method)
+			fmt.Printf("- Target: %s\n", req.RequestLine.RequestTarget)
+			fmt.Printf("- Version: %s\n", req.RequestLine.HttpVersion)
 			conn.Close()
 			fmt.Println("connection closed")
 		}(conn)
 	}
-}
-
-func getLinesChannel(f io.ReadCloser) <-chan string {
-	linesChan := make(chan string)
-	currentLine := ""
-
-	go func() {
-		defer close(linesChan)
-		for {
-			data := make([]byte, 8)
-			n, err := f.Read(data)
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				log.Fatalf("Error reading file %v", err)
-			}
-			//parts := strings.Split(string(buffer[:n]), "\n")
-			//currentLine += strings.Join(parts[:1], " ")
-			/* if len(parts) > 1 {
-				linesChan <- currentLine
-				currentLine = ""
-				currentLine += string(parts[1])
-			} */
-			data = data[:n]
-			if i := bytes.IndexByte(data, '\n'); i != -1 {
-				currentLine += string(data[:i])
-				data = data[i+1:]
-				linesChan <- currentLine
-				currentLine = ""
-			}
-			currentLine += string(data)
-		}
-		if len(currentLine) != 0 {
-			linesChan <- currentLine
-		}
-	}()
-	return linesChan
 }
