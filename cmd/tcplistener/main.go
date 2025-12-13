@@ -25,11 +25,18 @@ func main() {
 		go func(c net.Conn) {
 			req, err := request.RequestFromReader(conn)
 			if err != nil {
-				log.Fatalf("error parsing requesr: %v", err)
+				log.Fatalf("error parsing request: %v", err)
 			}
+			fmt.Println("Request line:")
 			fmt.Printf("- Method: %s\n", req.RequestLine.Method)
 			fmt.Printf("- Target: %s\n", req.RequestLine.RequestTarget)
 			fmt.Printf("- Version: %s\n", req.RequestLine.HttpVersion)
+			fmt.Println("Headers:")
+			req.Headers.ForEach(func(n, v string) {
+				fmt.Printf("- %s: %s\n", n, v)
+			})
+			fmt.Println("Body:")
+			fmt.Println(req.Body)
 			conn.Close()
 			fmt.Println("connection closed")
 		}(conn)

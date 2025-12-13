@@ -14,11 +14,17 @@ func TestParse(t *testing.T) {
 	n, done, err := h.Parse(data)
 	require.NoError(t, err)
 	require.NotNil(t, h.headers)
-	assert.Equal(t, "localhost:42069", h.Get("Host"))
-	assert.Equal(t, "barbar", h.Get("FooFoo"))
-	assert.Equal(t, "", h.Get("MissingKey"))
 	assert.Equal(t, 51, n)
 	assert.True(t, done)
+	host, ok := h.Get("Host")
+	assert.Equal(t, "localhost:42069", host)
+	assert.True(t, ok)
+	foofoo, ok := h.Get("FooFoo")
+	assert.Equal(t, "barbar", foofoo)
+	assert.True(t, ok)
+	missing, ok := h.Get("MissingKey")
+	assert.Equal(t, "", missing)
+	assert.False(t, ok)
 
 	// Test: Valid single header
 	h = NewHeaders()
@@ -26,7 +32,9 @@ func TestParse(t *testing.T) {
 	n, done, err = h.Parse(data)
 	require.NoError(t, err)
 	require.NotNil(t, h.headers)
-	assert.Equal(t, "application/json, text", h.Get("CONTENT-TYPE"))
+	host, ok = h.Get("CONTENT-TYPE")
+	assert.Equal(t, "application/json, text", host)
+	assert.True(t, ok)
 
 	// Test: Invalid spacing header
 	h = NewHeaders()
