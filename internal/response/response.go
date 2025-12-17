@@ -7,7 +7,9 @@ import (
 	"github.com/Israel-Andrade-P/http_from_tcp.git/internal/headers"
 )
 
-type Response struct{}
+type Writer struct {
+	writer io.Writer
+}
 
 type StatusCode int
 
@@ -17,7 +19,11 @@ const (
 	StatusInternalError StatusCode = 500
 )
 
-func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
+func NewWriter(writer io.Writer) *Writer {
+	return &Writer{writer: writer}
+}
+
+func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 	statusLine := []byte{}
 	switch statusCode {
 	case 200:
@@ -30,7 +36,7 @@ func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
 		return fmt.Errorf("unrecognized status error")
 	}
 
-	_, err := w.Write(statusLine)
+	_, err := w.writer.Write(statusLine)
 	if err != nil {
 		return err
 	}
@@ -38,20 +44,26 @@ func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
 	return nil
 }
 
-func GetDefaultHeaders(contentLen int) *headers.Headers {
-	h := headers.NewHeaders()
-	h.Set("Content-Length", fmt.Sprintf("%d", contentLen))
-	h.Set("Connection", "close")
-	h.Set("Content-Type", "text/plain")
-	return h
-}
-
-func WriteHeaders(w io.Writer, h *headers.Headers) error {
+func (w *Writer) WriteHeaders(h *headers.Headers) error {
 	b := []byte{}
 	h.ForEach(func(k, v string) {
 		b = fmt.Appendf(b, "%s: %s\r\n", k, v)
 	})
 	b = fmt.Append(b, "\r\n")
-	_, err := w.Write(b)
+	_, err := w.writer.Write(b)
 	return err
+}
+
+func (w *Writer) WriteBody(p []byte) (int, error) {
+	n, err := w.writer.Write(p)
+
+	return n, err
+}
+
+func GetDefaultHeaders(contentLen int) *headers.Headers {
+	h := headers.NewHeaders()
+	h.Set("Content-Length", fmt.Sprintf("%d", contentLen))
+	h.Set("Connection", "closed")
+	h.Set("Content-Type", "text/plain")
+	return h
 }
