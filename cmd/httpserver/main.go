@@ -19,7 +19,7 @@ import (
 func toStr(bytes []byte) string {
 	out := ""
 	for _, b := range bytes {
-		out += fmt.Sprintf("%x", b)
+		out += fmt.Sprintf("%02x", b)
 	}
 	return out
 }
@@ -73,7 +73,21 @@ func main() {
 		} else if req.RequestLine.RequestTarget == "/myproblem" {
 			body = respond500()
 			status = response.StatusInternalError
-		} else if strings.HasPrefix(req.RequestLine.RequestTarget, "/httpbin/stream") {
+		} else if req.RequestLine.RequestTarget == "/video" {
+			f, err := os.ReadFile("assets/vim.mp4")
+			if err != nil {
+				body = respond500()
+				status = response.StatusInternalError
+			} else {
+				h.Replace("Content-Type", "video/mp4")
+				h.Replace("Content-Length", fmt.Sprintf("%d", len(f)))
+				w.WriteStatusLine(status)
+				w.WriteHeaders(h)
+				w.WriteBody(f)
+				return
+			}
+
+		} else if strings.HasPrefix(req.RequestLine.RequestTarget, "/httpbin/") {
 			target := req.RequestLine.RequestTarget
 			res, err := http.Get("https://httpbin.org/" + target[len("/httpbin/"):])
 			if err != nil {
