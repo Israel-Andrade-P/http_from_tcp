@@ -38,6 +38,7 @@ var (
 	ErrorUnsuportedHttpVersion = fmt.Errorf("unsuported http version")
 	ErrorRequestInErrorState   = fmt.Errorf("request in error state")
 	separator                  = []byte("\r\n")
+	supportedMethods           = []string{"GET", "POST", "PUT", "DELETE", "PATCH"}
 )
 
 func newRequest() *Request {
@@ -169,6 +170,10 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 		return nil, 0, ErrorMalformedRequestLine
 	}
 
+	if !contains(supportedMethods, string(parts[0])) {
+		return nil, 0, ErrorMalformedRequestLine
+	}
+
 	httpParts := bytes.Split(parts[2], []byte("/"))
 	if len(httpParts) != 2 || string(httpParts[0]) != "HTTP" || string(httpParts[1]) != "1.1" {
 		return nil, 0, ErrorMalformedRequestLine
@@ -193,4 +198,13 @@ func getInt(headers *headers.Headers, name string, defaultValue int) int {
 		return defaultValue
 	}
 	return value
+}
+
+func contains(methods []string, target string) bool {
+	for _, method := range methods {
+		if target == method {
+			return true
+		}
+	}
+	return false
 }
