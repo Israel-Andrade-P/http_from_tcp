@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"slices"
 	"strconv"
 
 	"github.com/Israel-Andrade-P/http_from_tcp.git/internal/headers"
@@ -36,6 +37,7 @@ const (
 var (
 	ErrorMalformedRequestLine  = fmt.Errorf("malformed request-line")
 	ErrorUnsuportedHttpVersion = fmt.Errorf("unsuported http version")
+	ErrorUnsuportedMethod      = fmt.Errorf("unsuported http method")
 	ErrorRequestInErrorState   = fmt.Errorf("request in error state")
 	separator                  = []byte("\r\n")
 	supportedMethods           = []string{"GET", "POST", "PUT", "DELETE", "PATCH"}
@@ -66,6 +68,7 @@ outer:
 			rl, n, err := parseRequestLine(currentData)
 			if err != nil {
 				r.state = StateError
+				r.Body = err.Error()
 				return 0, err
 			}
 
@@ -80,6 +83,7 @@ outer:
 			n, done, err := r.Headers.Parse(currentData)
 			if err != nil {
 				r.state = StateError
+				r.Body = err.Error()
 				return 0, err
 			}
 
@@ -147,7 +151,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 
 		readN, err := request.parse(buf[:bufLen])
 		if err != nil {
-			return nil, err
+			return request, err
 		}
 
 		copy(buf, buf[readN:bufLen])
@@ -170,8 +174,8 @@ func parseRequestLine(b []byte) (*RequestLine, int, error) {
 		return nil, 0, ErrorMalformedRequestLine
 	}
 
-	if !contains(supportedMethods, string(parts[0])) {
-		return nil, 0, ErrorMalformedRequestLine
+	if !slices.Contains(supportedMethods, string(parts[0])) {
+		return nil, 0, ErrorUnsuportedMethod
 	}
 
 	httpParts := bytes.Split(parts[2], []byte("/"))

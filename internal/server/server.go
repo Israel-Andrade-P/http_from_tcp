@@ -28,7 +28,8 @@ func runConnection(s *Server, conn io.ReadWriteCloser) {
 	r, err := request.RequestFromReader(conn)
 	if err != nil {
 		responseWriter.WriteStatusLine(response.StatusBadRequest)
-		responseWriter.WriteHeaders(response.GetDefaultHeaders(0))
+		responseWriter.WriteHeaders(response.GetDefaultHeaders(len(r.Body)))
+		responseWriter.WriteBody([]byte(r.Body))
 		return
 	}
 
